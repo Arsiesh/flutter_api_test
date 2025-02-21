@@ -41,13 +41,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   Future<void> fetchPersons() async {
     setState(() => isLoading = true);
-    final response = await http.get(Uri.parse('https://fakerapi.it/api/v1/persons?_quantity=20'));
+    final response = await http.get(Uri.parse('https://fakerapi.it/api/v1/persons?_quantity=10'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() => persons = data['data']);
     }
     setState(() => isLoading = false);
   }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,7 +56,15 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(child: Text('Fetch persons from API')),
+      body: isLoading 
+      ? Center(child: CircularProgressIndicator())
+      : ListView.builder(itemCount: persons.length, itemBuilder: (context, index) {
+        return ListTile( 
+          leading: CircleAvatar(backgroundImage: NetworkImage('https://picsum.photos/200')), //The FakerAPI image link does not work
+          title: Text(persons[index]['firstname'] + ' ' + persons[index]['lastname']),
+          subtitle: Text(persons[index]['email']),
+        );
+      })
     );
   }
 }
