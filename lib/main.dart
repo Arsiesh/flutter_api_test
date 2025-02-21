@@ -1,8 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_api_test/controllers/person_controller.dart';
 import 'package:flutter_api_test/screens/person_details_page.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +10,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,6 +26,7 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -48,10 +47,18 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
   }
-  
+
   Future<void> fetchPersons() async {
+    if (isLoading) return;
+
+    setState(() => isLoading = true);
+
     List<Map<String, dynamic>> newPersons = await personController.fetchPersons();
-    setState(() => persons.addAll(newPersons));
+
+    setState(() {
+      persons.addAll(newPersons);
+      isLoading = false;
+    });
   }
 
   @override
@@ -61,10 +68,9 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: RefreshIndicator( 
+      body: RefreshIndicator(
         onRefresh: () async {
-          setState((
-          ) {
+          setState(() {
             persons.clear();
             personController.page = 1;
             personController.fetchCount = 0;
@@ -72,23 +78,42 @@ class _MyHomePageState extends State<MyHomePage> {
           });
           await fetchPersons();
         },
-        child: ListView.builder(controller: scrollController, itemCount: persons.length+1, itemBuilder: (context, index) {
-          if (index < persons.length) {
-            return ListTile( 
-              leading: CircleAvatar(backgroundImage: NetworkImage('https://picsum.photos/200')), //The FakerAPI image link does not work
-              title: Text(persons[index]['firstname'] + ' ' + persons[index]['lastname']),
-              subtitle: Text(persons[index]['email']),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PersonDetailsPage(person: persons[index])));
-              }
-            );
-          } else {
-            return personController.noMoreData
-              ? Center(child: Padding(padding: EdgeInsets.all(16), child: Text('No more data available')))
-              : Center(child: CircularProgressIndicator());
-          }
-      })
-      )
+        child: Center(
+          child: SizedBox(
+            height: kIsWeb ? 600 : null, 
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: persons.length + 1,
+              itemBuilder: (context, index) {
+                if (index < persons.length) {
+                  return ListTile(
+                    leading: CircleAvatar(
+                        backgroundImage:
+                            NetworkImage('https://picsum.photos/200')), // FakerAPI image doesn't work
+                    title: Text(
+                        '${persons[index]['firstname']} ${persons[index]['lastname']}'),
+                    subtitle: Text(persons[index]['email']),
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  PersonDetailsPage(person: persons[index])));
+                    },
+                  );
+                } else {
+                  return personController.noMoreData
+                      ? const Center(
+                          child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('No more data available')))
+                      : const Center(child: CircularProgressIndicator());
+                }
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
