@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_api_test/controllers/person_controller.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -31,24 +32,26 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<dynamic> persons = [];
-  bool isLoading = false;
+  final PersonController personController = PersonController();
+  final ScrollController scrollController = ScrollController();
+  List<Map<String, dynamic>> persons = [];
 
   @override
   void initState() {
     super.initState();
     fetchPersons();
-  }
-  Future<void> fetchPersons() async {
-    setState(() => isLoading = true);
-    final response = await http.get(Uri.parse('https://fakerapi.it/api/v1/persons?_quantity=10'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() => persons = data['data']);
-    }
-    setState(() => isLoading = false);
+    scrollController.addListener(() {
+      if (scrollController.position.pixels == scrollController.position.maxScrollExtent) {
+        fetchPersons();
+      }
+    });
   }
   
+  Future<void> fetchPersons() async {
+    List<Map<String, dynamic>> newPersons = await personController.fetchPersons();
+    setState(() => persons.addAll(newPersons));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,15 +59,31 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: isLoading 
-      ? Center(child: CircularProgressIndicator())
-      : ListView.builder(itemCount: persons.length, itemBuilder: (context, index) {
-        return ListTile( 
-          leading: CircleAvatar(backgroundImage: NetworkImage('https://picsum.photos/200')), //The FakerAPI image link does not work
-          title: Text(persons[index]['firstname'] + ' ' + persons[index]['lastname']),
-          subtitle: Text(persons[index]['email']),
-        );
+      body: RefreshIndicator( 
+        onRefresh: () async {
+          setState((
+          ) {
+            persons.clear();
+            personController.page = 1;
+            personController.fetchCount = 0;
+            personController.noMoreData = false;
+          });
+          await fetchPersons();
+        },
+        child: ListView.builder(controller: scrollController, itemCount: persons.length+1, itemBuilder: (context, index) {
+          if (index < persons.length) {
+            return ListTile( 
+              leading: CircleAvatar(backgroundImage: NetworkImage('https://picsum.photos/200')), //The FakerAPI image link does not work
+              title: Text(persons[index]['firstname'] + ' ' + persons[index]['lastname']),
+              subtitle: Text(persons[index]['email']),
+            );
+          } else {
+            return personController.noMoreData
+              ? Center(child: Padding(padding: EdgeInsets.all(16), child: Text('No more data available')))
+              : Center(child: CircularProgressIndicator());
+          }
       })
+      )
     );
   }
 }
