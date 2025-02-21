@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_api_test/controllers/person_controller.dart';
+import 'package:flutter_api_test/screens/person_details_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -34,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final PersonController personController = PersonController();
   final ScrollController scrollController = ScrollController();
+  bool isLoading = false;
   List<Map<String, dynamic>> persons = [];
 
   @override
@@ -76,6 +78,9 @@ class _MyHomePageState extends State<MyHomePage> {
               leading: CircleAvatar(backgroundImage: NetworkImage('https://picsum.photos/200')), //The FakerAPI image link does not work
               title: Text(persons[index]['firstname'] + ' ' + persons[index]['lastname']),
               subtitle: Text(persons[index]['email']),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PersonDetailsPage(person: persons[index])));
+              }
             );
           } else {
             return personController.noMoreData
