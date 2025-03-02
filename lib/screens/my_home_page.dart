@@ -19,7 +19,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    // Detect when user scrolls to the bottom
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent) {
@@ -91,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ? null
           : FloatingActionButton(
               onPressed: personProvider.fetchPersons,
-              child: const Icon(Icons.download),
+              child: const Icon(Icons.add),
             ),
     );
   }
